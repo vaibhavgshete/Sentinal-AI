@@ -1,263 +1,188 @@
 # Sentinel AI
 
-An intelligent error monitoring agent that watches for errors, analyzes them using local LLMs, and learns from past issues to avoid redundant API calls.
+Sentinel AI is a local error monitoring agent that watches a log file, analyzes new errors with Ollama, and caches past results so repeated issues are answered instantly.
 
 ## Overview
 
-Sentinel AI is a lightweight error monitoring and analysis tool that:
-- **Watches** log files for new errors in real-time
-- **Analyzes** errors using local Ollama LLM (no cloud dependency)
-- **Learns** from previous analyses by caching results
-- **Suggests** root causes, fixes, and shell commands
-- **Remembers** all errors and solutions in persistent memory
+Sentinel AI helps you debug faster by:
+- Watching a log file in real time
+- Reading only newly added log content instead of reprocessing the whole file
+- Reusing cached analyses for repeated errors
+- Normalizing repeated errors so small formatting differences still match
+- Calling a local Ollama model only when an error is new
+- Storing results in persistent JSON memory
 
-Perfect for developers who want intelligent error diagnostics with zero external dependencies.
+This project is now structured as an installable Python package with a CLI, which is the recommended path for shipping the first version.
 
 ## Features
 
-✨ **Memory Reuse** - Skip LLM calls for repeated errors  
-⚡ **Fast** - Instant responses from memory  
-🔒 **Local Only** - No cloud API keys needed  
-📝 **Smart Logging** - Clear step-by-step output  
-💾 **Persistent** - Error history in JSON format  
-🔧 **Simple** - Single file, no frameworks  
-🪟 **Windows Ready** - Works on Windows with Git Bash
-
-## How It Works
-
-1. **File Watching** - Sentinel monitors `log.txt` for changes
-2. **Error Detection** - When new content is found, reads the error
-3. **Memory Check** - Before calling LLM, checks if error was seen before
-4. **Smart Analysis**:
-   - If error exists in memory → return cached analysis instantly ⚡
-   - If new error → call Ollama and save for future reference 🤖
-5. **Response** - Gets root cause, fix recommendations, and shell commands
-6. **Memory** - Saves all error + analysis pairs with timestamps
+- Memory reuse for repeated errors
+- Local-only analysis with Ollama
+- Incremental log reading for append-style logs
+- Normalized exact matching for small formatting differences
+- Persistent JSON memory with backward-compatible loading
+- Protection against caching transient Ollama failures
+- Installable CLI package
 
 ## Installation
 
 ### 1. Install Ollama
 
-Download from https://ollama.ai for Windows
+Download Ollama for Windows and make sure it is available locally.
 
-### 2. Pull the Model
+### 2. Pull a Model
 
 ```bash
 ollama pull gemma3:4b
 ```
 
-### 3. Install Python Dependencies
+### 3. Install Sentinel AI
+
+For local development:
+
+```bash
+pip install -e .
+```
+
+If you prefer the old dependency-only flow, this still works:
 
 ```bash
 pip install -r requirements.txt
-```
-
-Or manually:
-```bash
-pip install watchdog requests
 ```
 
 ## Quick Start
 
-### Terminal 1 - Start Ollama Server
+### Terminal 1
 
 ```bash
 ollama serve
 ```
 
-This starts the API on `http://localhost:11434`
+### Terminal 2
 
-### Terminal 2 - Run Sentinel AI
+Recommended CLI usage:
 
 ```bash
+sentinel-ai watch --log log.txt
+```
+
+Alternative local development entrypoints:
+
+```bash
+python -m sentinel_ai watch --log log.txt
 python agent.py
 ```
 
-Monitor the output as Sentinel watches for errors!
+## CLI Commands
 
-## Usage
+Watch a log file:
 
-### Real-World Setup
-
-Point Sentinel to your application's error log:
-
-```python
-LOG_FILE = "/path/to/your/app/error.log"  # Your app writes errors here
+```bash
+sentinel-ai watch --log log.txt --memory-file memory.json
 ```
 
-When your app encounters an error, it writes to the log file. Sentinel automatically:
-- Detects the new error
-- Analyzes it with Ollama
-- Saves the solution to memory
-- Next time same error occurs → instant response from memory! ⚡
+Analyze one error directly:
 
-### Development/Testing
-
-For testing, manually edit `log.txt`:
-
-#### Example 1: Python Module Error
-
-1. Edit `log.txt`:
-```
-ModuleNotFoundError: No module named 'numpy'. Install with: pip install numpy
+```bash
+sentinel-ai analyze "ModuleNotFoundError: No module named 'numpy'"
 ```
 
-2. Save the file (Ctrl+S)
+List cached memory entries:
 
-3. Watch Sentinel AI analyze it:
-   ```
-   [CHANGE DETECTED] 2026-04-05 21:00:51
-   [*] Checking memory...
-   [*] Not in memory, calling LLM...
-   [ANALYSIS]
-   ROOT CAUSE: The error "ModuleNotFoundError..." indicates...
-   FIX: Install the package...
-   SHELL COMMAND: pip install numpy
-   [*] Saving to memory...
-   ```
-
-#### Example 2: Type Error (Memory Reuse)
-
-1. Edit `log.txt` with:
-```
-TypeError: unsupported operand type(s) for +: 'int' and 'str'
+```bash
+sentinel-ai memory list --memory-file memory.json
 ```
 
-2. **First time**: Sentinel calls Ollama (5-10 seconds)
+## How It Works
 
-3. **Edit again with same error**, save again:
-   ```
-   [CHANGE DETECTED] 2026-04-05 21:05:12
-   [*] Checking memory...
-   [✓] Found in memory! (Reusing previous analysis)
-   ```
-   **Instant response!** ⚡ No LLM call!
+1. Sentinel AI watches a log file for changes.
+2. When the file changes, it reads only the new content since the last processed position.
+3. It extracts the latest error block from that new content.
+4. It normalizes the error text and checks `memory.json` for a cached match.
+5. If a match exists, it prints the saved analysis immediately.
+6. If the error is new, it sends the error to Ollama.
+7. The response is printed and saved to memory only if the Ollama call succeeded.
+8. Legacy memory entries using `analysis` are automatically normalized to the current `response` schema.
 
 ## Project Structure
 
-```
+```text
 sentinel-ai/
-├── agent.py          # Core sentinel agent
-├── log.txt           # Error/log input file (monitored)
-├── memory.json       # Persistent error memory (auto-created)
-├── requirements.txt  # Python dependencies
-└── README.md         # This file
+|-- sentinel_ai/
+|   |-- __init__.py
+|   |-- __main__.py
+|   |-- app.py
+|   |-- cli.py
+|   |-- config.py
+|   |-- memory.py
+|   |-- ollama_client.py
+|   |-- parsing.py
+|   `-- watcher.py
+|-- agent.py
+|-- log.txt
+|-- memory.json
+|-- pyproject.toml
+|-- requirements.txt
+`-- README.md
 ```
 
-## Memory File Format
+## Packaging Notes
 
-`memory.json` stores all analyzed errors for future reference:
+- `pyproject.toml` defines the package metadata and the `sentinel-ai` console script.
+- `agent.py` is now a compatibility wrapper that launches `watch`.
+- The main shipping target is the CLI package, not an editor plugin.
+
+## Memory Format
+
+Sentinel AI stores memory in canonical JSON array format:
 
 ```json
 [
   {
-    "error": "ModuleNotFoundError: No module named 'numpy'...",
-    "response": "ROOT CAUSE: The numpy package is not installed...\nFIX: Install the numpy package...\nSHELL COMMAND: pip install numpy",
+    "error": "ModuleNotFoundError: No module named 'numpy'",
+    "response": "ROOT CAUSE: ...\n\nFIX: ...\n\nSHELL COMMAND: pip install numpy",
     "timestamp": "2026-04-05T20:08:49.981074"
-  },
-  {
-    "error": "TypeError: unsupported operand type(s) for +: 'int' and 'str'",
-    "response": "ROOT CAUSE: You are attempting to use the addition operator...",
-    "timestamp": "2026-04-05T21:01:18.210588"
   }
 ]
 ```
 
-## Configuration
+Older entries that use `analysis` are still loaded correctly and are rewritten into the `response` format.
 
-Edit `agent.py` to customize:
+## Notes
 
-```python
-LOG_FILE = "log.txt"                    # Change to your app's error log
-MEMORY_FILE = "memory.json"             # Where to store memory
-OLLAMA_API_URL = "http://localhost:11434/api/generate"  # Ollama endpoint
-OLLAMA_MODEL = "gemma3:4b"              # Change to any Ollama model
-```
-
-## Requirements
-
-- **Python 3.7+**
-- **Ollama** running locally on `http://localhost:11434`
-- `watchdog` - file system monitoring
-- `requests` - HTTP API calls to Ollama
-
-## Tips & Best Practices
-
-### Performance
-
-- **First error**: 5-10 seconds (LLM processing)
-- **Repeated error**: <100ms (from memory)
-- **Gemma3:4b** runs on CPU - no GPU needed!
-
-### Best Practices
-
-- Always start Ollama first with `ollama serve`
-- Point `LOG_FILE` to your real application logs
-- Let memory grow - more history = smarter sentinel
-- Review `memory.json` occasionally to see patterns
-
-### Extending with More Models
-
-```bash
-ollama pull llama2
-ollama pull mistral
-ollama pull neural-chat
-```
-
-Then change `OLLAMA_MODEL` in `agent.py`
+- Matching is normalized exact matching, not semantic similarity yet.
+- The agent is optimized for logs that grow over time.
+- If Ollama is down or times out, the failure message is shown but not cached.
 
 ## Troubleshooting
 
-### "Ollama not running"
+### Ollama is not running
+
 ```bash
 ollama serve
 ```
 
-### "ModuleNotFoundError: No module named 'watchdog'"
+### Missing Python packages
+
 ```bash
-pip install -r requirements.txt
+pip install -e .
 ```
 
-### File changes not detected
-- Save the file explicitly (Ctrl+S in editor)
-- Ensure `LOG_FILE` path is correct and accessible
+### File changes are not detected
 
-### No response from Ollama
+- Confirm `--log` points to the right file.
+- Save the file explicitly in your editor.
+- If your editor replaces files on save, Sentinel AI handles create, modify, and move events.
 
-Check if Ollama is running:
-```bash
-curl http://localhost:11434/api/tags
-```
+## Future Improvements
 
-Verify model exists:
-```bash
-ollama list
-```
-
-Pull model if needed:
-```bash
-ollama pull gemma3:4b
-```
-
-## Future Roadmap
-
-Sentinel AI can be extended with:
-- 🔗 Multiple log file monitoring
-- 🤖 Embedding-based similarity (fuzzy matching for similar errors)
-- 📊 Error pattern analytics and trending
-- 🌐 Slack/Discord notifications
-- 📈 Error frequency tracking and alerts
-- 🔐 Security vulnerability detection
-- ☁️ Multi-model support and model switching
+- Fuzzy or embedding-based similarity for near-duplicate errors
+- Multiple log file support
+- Error frequency analytics
+- Notifications or integrations
+- Better stack-trace extraction heuristics
+- Tests and release automation
 
 ## License
 
-MIT - Feel free to use, modify, and extend!
-
-## Contributing
-
-Found a bug or have a feature request? Open an issue or submit a PR!
-
----
-
-**Made for developers who want smart error diagnostics. Locally.**
+MIT
