@@ -6,60 +6,61 @@ Sentinel AI is a local log-watching and error-analysis tool. It watches a log fi
 
 ## High-Level Flow
 
-```text
-                    +----------------------+
-                    |   User / Terminal    |
-                    | sentinel-ai watch    |
-                    +----------+-----------+
-                               |
-                               v
-                    +----------------------+
-                    |  sentinel_ai.cli     |
-                    | command parsing      |
-                    +----------+-----------+
-                               |
-                               v
-                    +----------------------+
-                    |  sentinel_ai.app     |
-                    |  LogProcessor        |
-                    +----------+-----------+
-                               |
-             +-----------------+------------------+
-             |                 |                  |
-             v                 v                  v
-   +----------------+  +----------------+  +-------------------+
-   | watcher.py     |  | parsing.py     |  | memory.py         |
-   | file events    |  | latest error   |  | load/save/cache   |
-   +--------+-------+  +--------+-------+  +---------+---------+
-            |                   |                    |
-            +-------------------+--------------------+
-                                |
-                                v
-                      +----------------------+
-                      |  ollama_client.py    |
-                      | requests -> Ollama   |
-                      +----------+-----------+
-                                 |
-                                 v
-                      +----------------------+
-                      | Local Ollama Server  |
-                      | model inference      |
-                      +----------------------+
+```mermaid
+flowchart TD
+    user[User / Terminal<br/>sentinel-ai watch]
+    cli[sentinel_ai.cli<br/>command parsing]
+    app[sentinel_ai.app<br/>LogProcessor]
+    watcher[sentinel_ai.watcher<br/>file events]
+    parsing[sentinel_ai.parsing<br/>latest error extraction]
+    memory[sentinel_ai.memory<br/>load / save / cache match]
+    ollama_client[sentinel_ai.ollama_client<br/>requests to Ollama]
+    ollama[Local Ollama Server<br/>model inference]
+
+    user --> cli
+    cli --> app
+    app --> watcher
+    app --> parsing
+    app --> memory
+    app --> ollama_client
+    ollama_client --> ollama
 ```
 
 ## Runtime Sequence
 
-```text
-1. CLI receives command
-2. CLI builds Settings
-3. LogProcessor primes state
-4. watcher.py listens for file events
-5. On change, LogProcessor reads only new log content
-6. parsing.py extracts the latest error block
-7. memory.py checks for a normalized cached match
-8. If found, cached response is printed
-9. If not found, ollama_client.py sends the error to Ollama
-10. Response is printed and saved back through memory.py
+```mermaid
+sequenceDiagram
+    participant U as User / Terminal
+    participant C as sentinel_ai.cli
+    participant A as sentinel_ai.app
+    participant W as sentinel_ai.watcher
+    participant P as sentinel_ai.parsing
+    participant M as sentinel_ai.memory
+    participant O as sentinel_ai.ollama_client
+    participant L as Local Ollama Server
+
+    U->>C: Run `sentinel-ai watch`
+    C->>A: Build Settings and start LogProcessor
+    A->>M: Load and normalize memory
+    A->>W: Start watching log file
+    W-->>A: File change detected
+    A->>A: Read newly appended log content
+    A->>P: Extract latest error block
+    P-->>A: Return latest error block
+    A->>M: Check normalized cache match
+
+    alt Cached match found
+        M-->>A: Cached response
+        A-->>U: Print saved analysis
+    else New error
+        M-->>A: Cache miss
+        A->>O: Request fresh analysis
+        O->>L: Send prompt to local model
+        L-->>O: Return model response
+        O-->>A: Structured analysis
+        A->>M: Save new memory entry
+        A-->>U: Print analysis
+    end
 ```
 
 ## Components
@@ -140,17 +141,24 @@ Responsibilities:
 
 ## Data Flow
 
-```text
-log file
-  -> watcher.py sees change
-  -> app.py reads appended text
-  -> parsing.py extracts latest error block
-  -> memory.py checks cache
-     -> hit: return cached response
-     -> miss: ollama_client.py calls Ollama
-              -> response returned
-              -> memory.py persists response
-  -> analysis printed to terminal
+```mermaid
+flowchart LR
+    log[log file]
+    watcher[watcher.py]
+    app[app.py]
+    parsing[parsing.py]
+    memory[memory.py]
+    ollama[ollama_client.py]
+    terminal[terminal output]
+
+    log --> watcher
+    watcher --> app
+    app --> parsing
+    parsing --> memory
+    memory -->|cache hit| terminal
+    memory -->|cache miss| ollama
+    ollama --> memory
+    memory --> terminal
 ```
 
 ## Files And Roles
