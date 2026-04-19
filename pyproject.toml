@@ -8,6 +8,7 @@ version = "0.1.0"
 description = "Local AI log watcher and error analyzer powered by Ollama."
 readme = "README.md"
 requires-python = ">=3.9"
+license = { text = "Apache-2.0" }
 dependencies = [
   "requests==2.31.0",
   "watchdog>=5.0.0,<6",
