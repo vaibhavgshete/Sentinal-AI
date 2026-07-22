@@ -1,5 +1,10 @@
 # Sentinel AI
 
+![CI](https://github.com/vaibhavgshete/Sentinal-AI/actions/workflows/ci.yml/badge.svg)
+![Python](https://img.shields.io/badge/python-3.10%2B-blue)
+![License](https://img.shields.io/badge/license-Apache--2.0-green)
+![Ollama](https://img.shields.io/badge/powered%20by-Ollama-black)
+
 Sentinel AI is a local error monitoring tool that watches a log file, analyzes new errors with Ollama, and reuses cached results so repeated issues are answered instantly.
 
 The project ships as an installable Python package with a CLI. The `sentinel_ai/` package is the single implementation we keep and maintain.
@@ -19,7 +24,7 @@ The project ships as an installable Python package with a CLI. The `sentinel_ai/
 
 Before installing Sentinel AI, make sure your system has:
 
-- Python 3.9 or newer
+- Python 3.10 or newer
 - `pip` available in your terminal
 - Ollama installed locally
 - An Ollama model pulled locally, such as `gemma3:4b`
@@ -103,6 +108,32 @@ List cached memory entries:
 sentinel-ai memory list --memory-file memory.json
 ```
 
+## Example Output
+
+Running `sentinel-ai analyze` against a real error, with a local Ollama model:
+
+```bash
+$ sentinel-ai analyze "ModuleNotFoundError: No module named 'numpy'"
+[*] Calling Ollama...
+ROOT CAUSE: The error "ModuleNotFoundError: No module named 'numpy'" indicates that
+Python cannot find the NumPy library on your system. This usually happens because
+NumPy is either not installed at all, or it's not accessible to the current Python
+environment where you're running your code.
+
+FIX: You need to install the NumPy library using a package installer like pip. Pip
+will download and install NumPy along with its dependencies into your Python
+environment.
+
+SHELL COMMAND: `pip install numpy`
+```
+
+On a second, identical error, Sentinel AI skips the model call entirely and serves the cached analysis instantly:
+
+```text
+[*] Checking memory...
+[OK] Found in memory! (Reusing previous analysis)
+```
+
 ## How It Works
 
 1. Sentinel AI watches a log file for changes.
@@ -114,10 +145,24 @@ sentinel-ai memory list --memory-file memory.json
 7. The response is printed and saved to memory only if the Ollama call succeeded.
 8. Older memory entries using `analysis` are still loaded and normalized to the current `response` schema.
 
+## Running Tests
+
+Install the dev dependencies and run the suite with `pytest`:
+
+```bash
+pip install -e ".[dev]"
+pytest -v
+```
+
+Tests run automatically on every push and pull request via GitHub Actions (`.github/workflows/ci.yml`), across Python 3.10/3.11/3.13 on Linux and Windows, followed by a build job that packages and validates the sdist/wheel.
+
 ## Project Structure
 
 ```text
 sentinel-ai/
+|-- .github/
+|   `-- workflows/
+|       `-- ci.yml
 |-- sentinel_ai/
 |   |-- __init__.py
 |   |-- __main__.py
@@ -128,6 +173,11 @@ sentinel-ai/
 |   |-- ollama_client.py
 |   |-- parsing.py
 |   `-- watcher.py
+|-- tests/
+|   |-- test_app.py
+|   |-- test_memory.py
+|   |-- test_ollama_client.py
+|   `-- test_parsing.py
 |-- ARCHITECTURE.md
 |-- pyproject.toml
 `-- README.md

@@ -7,15 +7,39 @@ name = "sentinel-ai"
 version = "0.1.0"
 description = "Local AI log watcher and error analyzer powered by Ollama."
 readme = "README.md"
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 license = { text = "Apache-2.0" }
+authors = [
+  { name = "Vaibhav Shete", email = "vaibhavgshete@gmail.com" },
+]
+keywords = ["ollama", "llm", "log-monitoring", "cli", "developer-tools", "local-ai"]
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "Environment :: Console",
+  "Intended Audience :: Developers",
+  "License :: OSI Approved :: Apache Software License",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3 :: Only",
+  "Topic :: Software Development :: Debuggers",
+  "Topic :: System :: Logging",
+]
 dependencies = [
   "requests==2.31.0",
   "watchdog>=5.0.0,<6",
 ]
+
+[project.optional-dependencies]
+dev = ["pytest>=8.0"]
+
+[project.urls]
+Repository = "https://github.com/vaibhavgshete/Sentinal-AI"
+Issues = "https://github.com/vaibhavgshete/Sentinal-AI/issues"
 
 [project.scripts]
 sentinel-ai = "sentinel_ai.cli:main"
 
 [tool.setuptools]
 packages = ["sentinel_ai"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
