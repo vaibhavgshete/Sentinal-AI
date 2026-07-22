@@ -1,7 +1,7 @@
 # Sentinel AI
 
 ![CI](https://github.com/vaibhavgshete/Sentinal-AI/actions/workflows/ci.yml/badge.svg)
-![Python](https://img.shields.io/badge/python-3.9%2B-blue)
+![Python](https://img.shields.io/badge/python-3.10%2B-blue)
 ![License](https://img.shields.io/badge/license-Apache--2.0-green)
 ![Ollama](https://img.shields.io/badge/powered%20by-Ollama-black)
 
@@ -24,7 +24,7 @@ The project ships as an installable Python package with a CLI. The `sentinel_ai/
 
 Before installing Sentinel AI, make sure your system has:
 
-- Python 3.9 or newer
+- Python 3.10 or newer
 - `pip` available in your terminal
 - Ollama installed locally
 - An Ollama model pulled locally, such as `gemma3:4b`
@@ -154,7 +154,7 @@ pip install -e ".[dev]"
 pytest -v
 ```
 
-Tests run automatically on every push and pull request via GitHub Actions (`.github/workflows/ci.yml`), across Python 3.9/3.11/3.13 on Linux and Windows.
+Tests run automatically on every push and pull request via GitHub Actions (`.github/workflows/ci.yml`), across Python 3.10/3.11/3.13 on Linux and Windows, followed by a build job that packages and validates the sdist/wheel.
 
 ## Project Structure
 
