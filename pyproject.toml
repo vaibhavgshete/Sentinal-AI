@@ -28,6 +28,9 @@ dependencies = [
   "watchdog>=5.0.0,<6",
 ]
 
+[project.optional-dependencies]
+dev = ["pytest>=8.0"]
+
 [project.urls]
 Repository = "https://github.com/vaibhavgshete/Sentinal-AI"
 Issues = "https://github.com/vaibhavgshete/Sentinal-AI/issues"
@@ -37,3 +40,6 @@ sentinel-ai = "sentinel_ai.cli:main"
 
 [tool.setuptools]
 packages = ["sentinel_ai"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

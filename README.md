@@ -1,5 +1,6 @@
 # Sentinel AI
 
+![CI](https://github.com/vaibhavgshete/Sentinal-AI/actions/workflows/ci.yml/badge.svg)
 ![Python](https://img.shields.io/badge/python-3.9%2B-blue)
 ![License](https://img.shields.io/badge/license-Apache--2.0-green)
 ![Ollama](https://img.shields.io/badge/powered%20by-Ollama-black)
@@ -144,10 +145,24 @@ On a second, identical error, Sentinel AI skips the model call entirely and serv
 7. The response is printed and saved to memory only if the Ollama call succeeded.
 8. Older memory entries using `analysis` are still loaded and normalized to the current `response` schema.
 
+## Running Tests
+
+Install the dev dependencies and run the suite with `pytest`:
+
+```bash
+pip install -e ".[dev]"
+pytest -v
+```
+
+Tests run automatically on every push and pull request via GitHub Actions (`.github/workflows/ci.yml`), across Python 3.9/3.11/3.13 on Linux and Windows.
+
 ## Project Structure
 
 ```text
 sentinel-ai/
+|-- .github/
+|   `-- workflows/
+|       `-- ci.yml
 |-- sentinel_ai/
 |   |-- __init__.py
 |   |-- __main__.py
@@ -158,6 +173,11 @@ sentinel-ai/
 |   |-- ollama_client.py
 |   |-- parsing.py
 |   `-- watcher.py
+|-- tests/
+|   |-- test_app.py
+|   |-- test_memory.py
+|   |-- test_ollama_client.py
+|   `-- test_parsing.py
 |-- ARCHITECTURE.md
 |-- pyproject.toml
 `-- README.md
