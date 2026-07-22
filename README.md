@@ -1,5 +1,9 @@
 # Sentinel AI
 
+![Python](https://img.shields.io/badge/python-3.9%2B-blue)
+![License](https://img.shields.io/badge/license-Apache--2.0-green)
+![Ollama](https://img.shields.io/badge/powered%20by-Ollama-black)
+
 Sentinel AI is a local error monitoring tool that watches a log file, analyzes new errors with Ollama, and reuses cached results so repeated issues are answered instantly.
 
 The project ships as an installable Python package with a CLI. The `sentinel_ai/` package is the single implementation we keep and maintain.
@@ -101,6 +105,32 @@ List cached memory entries:
 
 ```bash
 sentinel-ai memory list --memory-file memory.json
+```
+
+## Example Output
+
+Running `sentinel-ai analyze` against a real error, with a local Ollama model:
+
+```bash
+$ sentinel-ai analyze "ModuleNotFoundError: No module named 'numpy'"
+[*] Calling Ollama...
+ROOT CAUSE: The error "ModuleNotFoundError: No module named 'numpy'" indicates that
+Python cannot find the NumPy library on your system. This usually happens because
+NumPy is either not installed at all, or it's not accessible to the current Python
+environment where you're running your code.
+
+FIX: You need to install the NumPy library using a package installer like pip. Pip
+will download and install NumPy along with its dependencies into your Python
+environment.
+
+SHELL COMMAND: `pip install numpy`
+```
+
+On a second, identical error, Sentinel AI skips the model call entirely and serves the cached analysis instantly:
+
+```text
+[*] Checking memory...
+[OK] Found in memory! (Reusing previous analysis)
 ```
 
 ## How It Works
